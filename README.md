@@ -1,4 +1,4 @@
-![header](./asset/header.png)
+![header](./asset/Header.png)
 
 ![platorm](./asset/platform-macos-lightgrey.svg) ![release](./asset/release-v1.0.0-brightgreen.svg) ![supports](./asset/supports-Alfred4-informational.svg) ![license](./asset/license-GPL3.0-yellow.svg)
 
