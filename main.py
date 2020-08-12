@@ -55,6 +55,16 @@ def query_weather(wf, query_location='', query_adm=''):
 
     # 获取城市ID
     geo_url = 'https://geoapi.heweather.net/v2/city/lookup?'
+    # 提前获取一下预设区域的时区，保证后期时间校正正确
+    r = requests.get(geo_url,
+                     params={
+                         'location': os.getenv('location'),
+                         'adm': os.getenv('adm'),
+                         'key': api_key
+                     })
+    geo_info = r.json()
+    local_utc = geo_info['location'][0]['utcOffset']
+
     r = requests.get(geo_url,
                      params={
                          'location': location,
@@ -77,36 +87,24 @@ def query_weather(wf, query_location='', query_adm=''):
     geo_adm2 = geo_info['location'][0]['adm2']  # 城市二级区划（市级）
     geo_country = geo_info['location'][0]['country']  # 城市所在国家
 
-    # 判断是否为中国所属
+    # 判断是否为中国所属，如果不处于中国境内，输出信息中加入国家信息
     if geo_country == '中国':
-        # 判断是否是直辖市
-        if geo_adm1 == geo_adm2:
-            # 判断是否是直辖市名称，并未具体到区县
-            if geo_name == geo_adm2:
-                API_title = u'【和风天气 · {}】'.format(geo_name)
-            if geo_name != geo_adm2:
-                API_title = u'【和风天气 · {} · {}】'.format(geo_name, geo_adm1)
-        if geo_adm1 != geo_adm2:
-            if geo_name == geo_adm2:
-                API_title = u'【和风天气 · {} · {}】'.format(geo_name, geo_adm1)
-            if geo_name != geo_adm2:
-                API_title = u'【和风天气 · {} · {} · {}】'.format(
-                    geo_name, geo_adm1, geo_adm2)
-    # 如果不处于中国境内，输出信息中加入国家信息
+        geo_c1 = ''
     else:
-        if geo_adm1 == geo_adm2:
-            if geo_name == geo_adm2:
-                API_title = u'【和风天气 · {} · {}】'.format(geo_name, geo_country)
-            if geo_name != geo_adm2:
-                API_title = u'【和风天气 · {} · {} · {}】'.format(
-                    geo_name, geo_country, geo_adm1)
-        if geo_adm1 != geo_adm2:
-            if geo_name == geo_adm2:
-                API_title = u'【和风天气 · {} · {} · {}】'.format(
-                    geo_name, geo_country, geo_adm1)
-            if geo_name != geo_adm2:
-                API_title = u'【和风天气 · {} · {} · {} · {}】'.format(
-                    geo_name, geo_country, geo_adm1, geo_adm2)
+        geo_c1 = '· {} '.format(geo_country)
+
+    # 判断是否是直辖市
+    if geo_adm1 == geo_adm2:
+        geo_a1 = ''
+    else:
+        geo_a1 = '· {} '.format(geo_adm1)
+
+    # 判断是否具体到了具体区县
+    if geo_name == geo_adm2:
+        geo_a2 = ''
+    else:
+        geo_a2 = '· {} '.format(geo_adm2)
+    API_title = u'【和风天气 · {}{}{}{}】'.format(geo_name, geo_c1, geo_a1, geo_a2)
     API_sub_title = u'  Code by Leon/Arthals，API by HeWeather，各项具体内容可以选中条目同时按住⇧\
 预览'
 
@@ -144,32 +142,25 @@ def query_weather(wf, query_location='', query_adm=''):
                         'typeName'] + warn_info['warning'][i]['level'] + '预警'
                     warning_list.append(warn_info_title)
 
+            # 列表去重
+            warning_list = list(set(warning_list))
             # 如果只有一条预警，直接输出
             if len(warning_list) == 1:
                 warn_title = u'【{}】{}'.format(geo_name, warning_list[0])
-                # 对时间进行切片操作，格式化输出
-                warn_pubTime_list = []
-                warn_pubTime_list.append(warn_info['updateTime'][:-6])
-                warn_pubTime_list.append(warn_info['updateTime'][-6:])
-                pubTime = str(
-                    datetime.strptime(
-                        warn_pubTime_list[0],
-                        '%Y-%m-%dT%H:%M')) + ' UTC' + warn_pubTime_list[1]
-                warn_sub_title = u'  ↻ {}   蓝色<黄色<橙色<红色   具体内容请按住⇧预览'.format(
-                    pubTime)
             # 如果有两条及以上的预警，以'&'分隔后输出
             else:
                 warning_all = '&'.join(warning_list)
                 warn_title = u'【{}】{}'.format(geo_name, warning_all)
-                warn_pubTime_list = []
-                warn_pubTime_list.append(warn_info['updateTime'][:-6])
-                warn_pubTime_list.append(warn_info['updateTime'][-6:])
-                pubTime = str(
-                    datetime.strptime(
-                        warn_pubTime_list[0],
-                        '%Y-%m-%dT%H:%M')) + ' UTC' + warn_pubTime_list[1]
-                warn_sub_title = u'  ↻ {}   蓝色<黄色<橙色<红色   具体内容请按住⇧预览'.format(
-                    pubTime)
+            # 对时间进行切片操作，格式化输出
+            warn_pubTime_list = []
+            warn_pubTime_list.append(warn_info['updateTime'][:-6])
+            warn_pubTime_list.append(warn_info['updateTime'][-6:])
+            pubTime = str(
+                datetime.strptime(
+                    warn_pubTime_list[0],
+                    '%Y-%m-%dT%H:%M')) + ' UTC' + warn_pubTime_list[1]
+            warn_sub_title = u'  ↻ {}   蓝色<黄色<橙色<红色   具体内容请按住⇧预览'.format(
+                pubTime)
 
             warn_icon_path = './res/icon-warn/warn.png'
             wf.add_item(warn_title,
@@ -194,19 +185,25 @@ def query_weather(wf, query_location='', query_adm=''):
         aqi_num = int(aqi_info['now']['aqi'])  # AQI程度描述
         aqi_state = aqi_info['now']['category']  # AQI程度描述
 
-        # 获取AQI程度对应等级，以调整icon路径
+        # 获取AQI程度对应等级，以调整icon路径，副标题提示
         if 0 <= int(aqi_num) <= 50:
             aqi_state_en = '1'
+            aqi_sub_sug = '空气质量令人满意，基本无空气污染'
         elif 50 < int(aqi_num) <= 100:
             aqi_state_en = '2'
+            aqi_sub_sug = '空气质量可接受，但某些污染物可能对极少数异常敏感人群健康有较弱影响'
         elif 100 < int(aqi_num) <= 150:
             aqi_state_en = '3'
+            aqi_sub_sug = '易感人群症状有轻度加剧，健康人群出现刺激症状'
         elif 150 < int(aqi_num) <= 200:
             aqi_state_en = '4'
+            aqi_sub_sug = '进一步加剧易感人群症状，可能对健康人群心脏、呼吸系统有影响'
         elif 200 < int(aqi_num) <= 300:
             aqi_state_en = '5'
+            aqi_sub_sug = '心脏病和肺病患者症状显著加剧，运动耐受力降低，健康人群普遍出现症状'
         else:
             aqi_state_en = '6'
+            aqi_sub_sug = '健康人群运动耐受力降低，有明显强烈症状，提前出现某些疾病'
         aqi_icon_path = './res/icon-aqi/{}.png'.format(aqi_state_en)
 
         # 对时间进行切片操作，格式化输出
@@ -217,7 +214,7 @@ def query_weather(wf, query_location='', query_adm=''):
             datetime.strptime(aqi_pubTime_list[0],
                               '%Y-%m-%dT%H:%M')) + ' UTC' + aqi_pubTime_list[1]
         aqi_title = u'【{}】当前AQI {}，{}'.format(geo_name, aqi_num, aqi_state)
-        aqi_sub_title = u'  ↻ {}'.format(pubTime)
+        aqi_sub_title = u'  ↻ {}    描述：{}'.format(pubTime, aqi_sub_sug)
         wf.add_item(aqi_title,
                     aqi_sub_title,
                     icon=aqi_icon_path,
@@ -250,12 +247,12 @@ def query_weather(wf, query_location='', query_adm=''):
     weather_txt = weather_info['now']['text']  # 天气描述
     weather_precip = weather_info['now']['precip']  # 实况降水量
 
-    # 判断查询位置是否在中国境内，如果不在则比较时间
+    # 判断查询位置是否在中国境内，如果不在则比较时间，调整输出时间为当地时间
     if geo_country != '中国':
         timezone1 = update_time_list[1].split(':')
-        timezone_pek = '+08:00'.split(':')
-        hour_delta = int(timezone1[0]) - int(timezone_pek[0])
-        min_delta = int(timezone1[1]) - int(timezone_pek[1])
+        local_utc_list = local_utc.split(':')
+        hour_delta = int(timezone1[0]) - int(local_utc_list[0])
+        min_delta = int(timezone1[1]) - int(local_utc_list[1])
         location_time = datetime.now() + timedelta(hours=hour_delta,
                                                    minutes=min_delta)
         location_time_str = datetime.strftime(location_time, '%m月%d日 %H:%M')
@@ -264,6 +261,7 @@ def query_weather(wf, query_location='', query_adm=''):
         # 获取当前时间
         now_time = datetime.strftime(datetime.now(), '%H:%M')
         title = u'【{}】{}，{}'.format(geo_name, now_time, weather_txt)
+
     sub_title = u'  ☉{}℃（{}℃）    ☁ {}{}级    ☂ {}mm    ↻ {}'.format(
         weather_tmp, weather_feel, weather_windDir, weather_windScale,
         weather_precip, update_time)
