@@ -39,7 +39,7 @@
 
 * 变更了原有图标为和风天气新版icon，更加美观。
 
-  > 有关此项，你可以从[@heweather](https://github.com/heweather) / **[WeatherIcon](https://github.com/heweather/WeatherIcon)**下载和风天气设计的其他版本icon并且自行替换./res/icon-heweather文件夹中的图标
+  > 有关此项，你可以从[@heweather](https://github.com/heweather) / **[WeatherIcon](https://github.com/heweather/WeatherIcon)** 下载和风天气设计的其他版本icon并且自行替换./res/icon-heweather文件夹中的图标
 
 * 对于返回结果加入了`quicklookurl`参数，对于每项结果，你都可以在选中结果的同时按住`⇧`或者`⌘`+`Y`预览API返回的`fxLink`自适应网页来获取更为详尽的信息。
 
