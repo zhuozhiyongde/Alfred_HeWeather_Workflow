@@ -7,15 +7,15 @@
 # @Contact :   zhuozhiyongde@126.com
 # @Software:   Visual Studio Code
 
-
 import sys
 import os
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from workflow import Workflow3
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 
+# ☉☀☂𐑺☾
 # 定义查询天气函数
 def query_weather(wf, query_location='', query_adm=''):
     import requests
@@ -92,8 +92,6 @@ def query_weather(wf, query_location='', query_adm=''):
             if geo_name != geo_adm2:
                 API_title = u'【和风天气 · {} · {} · {}】'.format(
                     geo_name, geo_adm1, geo_adm2)
-        API_sub_title = u'  Code by Leon/Arthals，API by HeWeather，各项具体内容可以选中条目同时按住⇧预览'
-        wf.add_item(API_title, API_sub_title)
     # 如果不处于中国境内，输出信息中加入国家信息
     else:
         if geo_adm1 == geo_adm2:
@@ -109,8 +107,10 @@ def query_weather(wf, query_location='', query_adm=''):
             if geo_name != geo_adm2:
                 API_title = u'【和风天气 · {} · {} · {} · {}】'.format(
                     geo_name, geo_country, geo_adm1, geo_adm2)
-        API_sub_title = u'  Code by Leon/Arthals，API by HeWeather，各项具体内容可以选中条目同时按住⇧预览'
-        wf.add_item(API_title, API_sub_title)
+    API_sub_title = u'  Code by Leon/Arthals，API by HeWeather，各项具体内容可以选中条目同时按住⇧\
+预览'
+
+    wf.add_item(API_title, API_sub_title)
 
     # 获取数据
     base_url = 'https://devapi.heweather.net/v7/{want_type}/{want_time}?'
@@ -143,6 +143,7 @@ def query_weather(wf, query_location='', query_adm=''):
                     warn_info_title = warn_info['warning'][i][
                         'typeName'] + warn_info['warning'][i]['level'] + '预警'
                     warning_list.append(warn_info_title)
+
             # 如果只有一条预警，直接输出
             if len(warning_list) == 1:
                 warn_title = u'【{}】{}'.format(geo_name, warning_list[0])
@@ -169,6 +170,7 @@ def query_weather(wf, query_location='', query_adm=''):
                         '%Y-%m-%dT%H:%M')) + ' UTC' + warn_pubTime_list[1]
                 warn_sub_title = u'  ↻ {}   蓝色<黄色<橙色<红色   具体内容请按住⇧预览'.format(
                     pubTime)
+
             warn_icon_path = './res/icon-warn/warn.png'
             wf.add_item(warn_title,
                         warn_sub_title,
@@ -186,6 +188,8 @@ def query_weather(wf, query_location='', query_adm=''):
             failure_sub_title = error_dic[aqi_info['code']]
             wf.add_item(failure_title, failure_sub_title)
             return
+
+        # 保存AQI信息
         aqi_link = aqi_info['fxLink']  # AQI自适应网页
         aqi_num = int(aqi_info['now']['aqi'])  # AQI程度描述
         aqi_state = aqi_info['now']['category']  # AQI程度描述
@@ -231,7 +235,6 @@ def query_weather(wf, query_location='', query_adm=''):
         return
 
     weather_link = weather_info['fxLink']  # 天气信息自适应网页
-
     # 对更新时间进行切片操作，格式化输出
     update_time_list = []
     update_time_list.append(weather_info['updateTime'][:-6])
@@ -247,17 +250,25 @@ def query_weather(wf, query_location='', query_adm=''):
     weather_txt = weather_info['now']['text']  # 天气描述
     weather_precip = weather_info['now']['precip']  # 实况降水量
 
-    # 获取当前时间
-    now_time = datetime.strftime(datetime.now(), '%H:%M')
-    title = u'【{}】{}，{}'.format(geo_name, now_time, weather_txt)
+    # 判断查询位置是否在中国境内，如果不在则比较时间
+    if geo_country != '中国':
+        timezone1 = update_time_list[1].split(':')
+        timezone_pek = '+08:00'.split(':')
+        hour_delta = int(timezone1[0]) - int(timezone_pek[0])
+        min_delta = int(timezone1[1]) - int(timezone_pek[1])
+        location_time = datetime.now() + timedelta(hours=hour_delta,
+                                                   minutes=min_delta)
+        location_time_str = datetime.strftime(location_time, '%m月%d日 %H:%M')
+        title = u'【{}】{}，{}'.format(geo_name, location_time_str, weather_txt)
+    else:
+        # 获取当前时间
+        now_time = datetime.strftime(datetime.now(), '%H:%M')
+        title = u'【{}】{}，{}'.format(geo_name, now_time, weather_txt)
     sub_title = u'  ☉{}℃（{}℃）    ☁ {}{}级    ☂ {}mm    ↻ {}'.format(
         weather_tmp, weather_feel, weather_windDir, weather_windScale,
         weather_precip, update_time)
     icon_path = './res/icon-heweather/{}.png'.format(weather_icon)
     wf.add_item(title, sub_title, icon=icon_path, quicklookurl=weather_link)
-
-    # '☉☀☂𐑺☾'
-    # 逐小时预报-API需要开发者版本API，暂时不写
 
     # 获取未来3日天气状况
     url = base_url.format(want_type='weather', want_time='3d')
@@ -278,27 +289,29 @@ def query_weather(wf, query_location='', query_adm=''):
     # 获取三日具体信息
     for index in range(3):
         # 通过date_valiid()函数判别信息是否滞后，如果滞后执行修正
-        index = index + date_valid(
-            weather_info['daily'][0]['fxDate'].split('-')[2])
+        # 如果不在中国境内，与当地时间进行比较
+        if geo_country != '中国':
+            index = index + date_valid(
+                weather_info['daily'][0]['fxDate'].split('-')[2],
+                location_time)
+        else:
+            index = index + date_valid(
+                weather_info['daily'][0]['fxDate'].split('-')[2])
+
         # 忽略昨天的信息
         if index == -1:
             continue
-        # 每天信息字典
-        weather_future = weather_info['daily'][index]
-        # 最高温度和最低温度
-        tmp_max = weather_future['tempMax']
-        tmp_min = weather_future['tempMin']
-        # 白天和夜晚
+
+        weather_future = weather_info['daily'][index]  # 每天信息字典
+        tmp_max = weather_future['tempMax']  # 最高温度
+        tmp_min = weather_future['tempMin']  # 最低温度
         future_txt_day = weather_future['textDay']  # 白天文字描述
         weather_icon = weather_future['iconDay']  # 输出icon使用白天icon
         future_txt_night = weather_future['textNight']  # 夜晚文字描述
-        # 日出和日落
-        sunrise = weather_future['sunrise']
-        sunset = weather_future['sunset']
-        # 降水
-        precip = weather_future['precip']
-        # 紫外线指数
-        uvindex = weather_future['uvIndex']
+        sunrise = weather_future['sunrise']  # 日出
+        sunset = weather_future['sunset']  # 日落
+        precip = weather_future['precip']  # 降水
+        uvindex = weather_future['uvIndex']  # 紫外线指数
 
         # 判断紫外线指数强度，调整输出提示
         if 0 <= int(uvindex) <= 2:
@@ -315,10 +328,13 @@ def query_weather(wf, query_location='', query_adm=''):
         title = u'【{}】{}白天{}，夜间{}'.format(geo_name,
                                           wf.decode(date_trans[index]),
                                           future_txt_day, future_txt_night)
-        time_date, time_week = get_date(index)
-        sub_title = '   ↓{}℃    ↑{}℃    ☀{}    ☾{}    ☂{}mm    ☼{}   {}   {}   {}'.format(
-            tmp_min, tmp_max, sunrise, sunset, precip, uvindex_info,
-            date_trans[index], time_date, time_week)
+        if geo_country != '中国':
+            time_date, time_week = get_date(index, location_time)
+        else:
+            time_date, time_week = get_date(index)
+        sub_title = '   ↓{}℃    ↑{}℃    ☀{}    ☾{}    ☂{}mm    ☼{}   {}   {}   \
+{}'.format(tmp_min, tmp_max, sunrise, sunset, precip, uvindex_info,
+           date_trans[index], time_date, time_week)
         # 天气图标
         icon_path = './res/icon-heweather/{}.png'.format(weather_icon)
         wf.add_item(title,
@@ -328,9 +344,12 @@ def query_weather(wf, query_location='', query_adm=''):
 
 
 # 定义日期对比函数，确定3日预测是否滞后
-def date_valid(num):
+def date_valid(num, location_time=''):
     validnum = int(num)
-    day = datetime.now() + timedelta(days=-1)
+    if location_time:
+        day = location_time + timedelta(days=-1)
+    else:
+        day = datetime.now() + timedelta(days=-1)
     date_num = int(day.strftime('%d'))
     if validnum == date_num:
         return -1
@@ -339,7 +358,7 @@ def date_valid(num):
 
 
 # 定义日期获取函数
-def get_date(offset=0):
+def get_date(offset, location_time=''):
     '''
      获取某一天的日期信息.
      args: timedelta 往后查询的天数，默认为0是查询今天
@@ -354,7 +373,10 @@ def get_date(offset=0):
         'Sat': '星期六',
         'Sun': '星期日'
     }
-    day = date.today()
+    if location_time:
+        day = location_time
+    else:
+        day = datetime.today()
     if offset != 0:
         day = datetime.now() + timedelta(days=offset)
     return day.strftime('%m月%d日'), week[day.strftime('%a')]
@@ -366,8 +388,8 @@ def main(wf):
     query_adm = ''
     if len(wf.args) and wf.args[0] != '':
         if ' ' in wf.args[0]:
-            query_location = wf.args[0].split('\ ')[0]
-            query_adm = wf.args[0].split('\ ')[1]
+            query_location = wf.args[0].split('\\ ')[0]
+            query_adm = wf.args[0].split('\\ ')[1]
         else:
             query_location = wf.args[0]
             query_adm = ''
