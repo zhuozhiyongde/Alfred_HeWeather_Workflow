@@ -1,6 +1,6 @@
 ![header](./asset/header.png)
 
-![platorm](./asset/platform-macos-lightgrey.svg) ![release](./asset/release-v1.0.0-brightgreen.svg) ![supports](./asset/supports-Alfred4-informational.svg) <img src="./asset/license-GPL3.0-yellow.svg" alt="license" /> <img src="./asset/powered-by-heweather-dark2.png" alt="license" style="zoom:50%;" />
+<img src='./asset/platform-macos-lightgrey.svg' height="20" alt='platform'/>  <img src='./asset/release-v1.0.0-brightgreen.svg' height="20" alt='release'/>  <img src='./asset/supports-Alfred4-informational.svg' height="20" alt='supports'/>  <img src="./asset/license-GPL3.0-yellow.svg" height="20" alt="license" />  <img src="./asset/powered-by-heweather-dark2.png"  width="160" height="20" alt="数据来自和风天气" />
 
 ## Author
 
