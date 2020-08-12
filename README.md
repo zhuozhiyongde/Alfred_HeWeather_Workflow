@@ -1,4 +1,4 @@
-![header](./asset/header.png)
+![header](./asset/Header.png)
 
 <img src='./asset/platform-macos-lightgrey.svg' height="20" alt='platform'/>  <img src='./asset/release-v1.0.0-brightgreen.svg' height="20" alt='release'/>  <img src='./asset/supports-Alfred4-informational.svg' height="20" alt='supports'/>  <img src="./asset/license-GPL3.0-yellow.svg" height="20" alt="license" />  <img src="./asset/powered-by-heweather-dark2.png"  width="160" height="20" alt="数据来自和风天气" />
 
@@ -78,9 +78,9 @@
    > 建议先到某个地方复制一遍，检查是否带着制表符/回车符复制进去了，这样的话会报错。
 
 6. 设置 `adm`, `location`环境参数，可以以中文输入
-> ![](./asset/step-1.png)
+> ![](./asset/Step-1.png)
 >
-> ![](./asset/step-2.png)
+> ![](./asset/Step-2.png)
 
 ## 效果预览
 ![1](./asset/Arthals-HeWeather.png)
